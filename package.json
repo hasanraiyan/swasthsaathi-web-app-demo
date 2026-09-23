@@ -1,0 +1,21 @@
+{
+  "name": "swasthsaathi",
+  "private": true,
+  "scripts": {
+    "dev": "turbo dev",
+    "dev:api": "turbo dev --filter=@swasthsaathi/api",
+    "dev:mobile": "turbo dev --filter=@swasthsaathi/mobile",
+    "build": "turbo build",
+    "prebuild:mobile": "pnpm --filter @swasthsaathi/mobile prebuild",
+    "android": "pnpm --filter @swasthsaathi/mobile android",
+    "ios": "pnpm --filter @swasthsaathi/mobile ios",
+    "lint": "turbo lint",
+    "clean": "turbo clean",
+    "web": "pnpm --filter @swasthsaathi/mobile web"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0",
+    "turbo": "^2.11.2"
+  },
+  "packageManager": "pnpm@10.33.2"
+}

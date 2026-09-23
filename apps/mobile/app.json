@@ -1,0 +1,56 @@
+{
+  "expo": {
+    "name": "SwasthSaathi",
+    "slug": "swasthsaathi",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "swasthsaathi",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.swasthsaathi.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#F1F8F4"
+      },
+      "package": "com.swasthsaathi.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single",
+      "name": "SwasthSaathi",
+      "themeColor": "#17594A",
+      "backgroundColor": "#F7FAF8"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-dev-client",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 24
+          }
+        }
+      ],
+      "expo-status-bar",
+      "expo-web-browser",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#F1F8F4"
+        }
+      ],
+      "@clerk/expo",
+      "expo-secure-store"
+    ]
+  }
+}

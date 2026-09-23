@@ -1,0 +1,15 @@
+diff --git a/android/build.gradle b/android/build.gradle
+index 0033a2b241128ccba7073f739205815f9ea949e7..c6446ef9c442669bad94ad74627d96ade7b3ad87 100644
+--- a/android/build.gradle
++++ b/android/build.gradle
+@@ -320,7 +320,9 @@ def assertMinimalReactNativeVersion = task assertMinimalReactNativeVersionTask {
+ task downloadPrebuiltBinaries(type: Exec) {
+   def isWindows = Os.isFamily(Os.FAMILY_WINDOWS)
+   if (isWindows) {
+-    commandLine 'C:\\Program Files\\Git\\usr\\bin\\bash.exe', '../scripts/download-prebuilt-binaries.sh', 'android', isFFmpegDisabled() ? 'skipffmpeg' : ''
++    // Git\bin\bash.exe is the launcher that puts /usr/bin (mkdir, rm, unzip) on PATH;
++    // Git\usr\bin\bash.exe started from Gradle has none of them.
++    commandLine 'C:\\Program Files\\Git\\bin\\bash.exe', '../scripts/download-prebuilt-binaries.sh', 'android', isFFmpegDisabled() ? 'skipffmpeg' : ''
+   } else {
+     commandLine 'chmod', '+x', '../scripts/download-prebuilt-binaries.sh'
+     commandLine 'bash', '../scripts/download-prebuilt-binaries.sh', 'android', isFFmpegDisabled() ? 'skipffmpeg' : ''

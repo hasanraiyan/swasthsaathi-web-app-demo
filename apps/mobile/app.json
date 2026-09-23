@@ -9,14 +9,21 @@
     "scheme": "swasthsaathi",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.swasthsaathi.app"
+      "bundleIdentifier": "com.swasthsaathi.app",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "SwasthSaathi uses the microphone so you can talk to the health assistant."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#F1F8F4"
       },
-      "package": "com.swasthsaathi.app"
+      "package": "com.swasthsaathi.app",
+      "permissions": [
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -50,7 +57,20 @@
         }
       ],
       "@clerk/expo",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "react-native-audio-api",
+        {
+          "iosMicrophonePermission": "SwasthSaathi uses the microphone so you can talk to the health assistant.",
+          "iosBackgroundMode": false,
+          "androidForegroundService": false,
+          "androidPermissions": [
+            "android.permission.RECORD_AUDIO",
+            "android.permission.MODIFY_AUDIO_SETTINGS"
+          ],
+          "disableFFmpeg": true
+        }
+      ]
     ]
   }
 }

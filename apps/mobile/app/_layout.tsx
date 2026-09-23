@@ -14,6 +14,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AssistantProvider } from '../src/assistant/AssistantProvider';
 import { OfflineBanner } from '../src/components/OfflineBanner';
 import { Text, colors, spacing } from '../src/design-system';
 
@@ -50,26 +51,29 @@ export default function RootLayout() {
 
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <SafeAreaProvider>
-        <StatusBar style="dark" />
-        <OfflineBanner />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: colors.background },
-            animation: 'slide_from_right',
-          }}
-        >
-          <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
-          <Stack.Screen name="sign-in" options={{ animation: 'fade' }} />
-          <Stack.Screen name="role" options={{ animation: 'fade' }} />
-          <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
-          <Stack.Screen name="worker" options={{ animation: 'fade' }} />
-          <Stack.Screen name="clinic" options={{ animation: 'fade' }} />
-          <Stack.Screen name="facility" options={{ animation: 'fade' }} />
-          <Stack.Screen name="emergency" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
-        </Stack>
-      </SafeAreaProvider>
+      <AssistantProvider>
+        <SafeAreaProvider>
+          <StatusBar style="dark" />
+          <OfflineBanner />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: colors.background },
+              animation: 'slide_from_right',
+            }}
+          >
+            <Stack.Screen name="onboarding" options={{ animation: 'fade' }} />
+            <Stack.Screen name="sign-in" options={{ animation: 'fade' }} />
+            <Stack.Screen name="role" options={{ animation: 'fade' }} />
+            <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+            <Stack.Screen name="worker" options={{ animation: 'fade' }} />
+            <Stack.Screen name="clinic" options={{ animation: 'fade' }} />
+            <Stack.Screen name="facility" options={{ animation: 'fade' }} />
+            <Stack.Screen name="emergency" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+            <Stack.Screen name="assistant" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+          </Stack>
+        </SafeAreaProvider>
+      </AssistantProvider>
     </ClerkProvider>
   );
 }

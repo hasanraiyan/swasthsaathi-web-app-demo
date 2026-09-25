@@ -1,4 +1,5 @@
 export * from './tokens';
+export * from './breakpoints';
 export * from './components/Text';
 export * from './components/Button';
 export * from './components/Surfaces';
@@ -6,4 +7,5 @@ export * from './components/Inputs';
 export * from './components/Screen';
 export * from './components/Composites';
 export * from './components/Feedback';
+export * from './components/Responsive';
 export * from './illustrations';

@@ -7,6 +7,7 @@ import { patientsStore, referralsStore, tasksStore } from '../../src/data/rural'
 import {
   Banner,
   Card,
+  CardGrid,
   Grid,
   Icon,
   IconButton,
@@ -55,15 +56,15 @@ export default function WorkerHome() {
       </Card>
       <Spacer size="lg" />
 
-      <Row gap="sm">
+      <CardGrid minItemWidth={160}>
         <KpiCard label="Due today" value={today.length} icon="today-outline" />
         <KpiCard label="High risk" value={highRisk.length} icon="alert-circle-outline" />
         <KpiCard label="Open referrals" value={openReferrals.length} icon="git-branch-outline" />
-      </Row>
+      </CardGrid>
       <Spacer size="xl" />
 
       <SectionHeader title="Quick actions" />
-      <Grid columns={4}>
+      <Grid columns={4} tabletColumns={6} desktopColumns={8}>
         <QuickAction icon="person-add-outline" label="Register patient" onPress={() => router.push('/patient/new')} />
         <QuickAction icon="pulse-outline" label="Triage" tint={colors.danger} background={colors.dangerSoft} onPress={() => router.push('/triage')} />
         <QuickAction icon="videocam-outline" label="Assisted consult" tint={colors.info} background={colors.infoSoft} onPress={() => router.push('/teleconsult')} />
@@ -89,16 +90,16 @@ export default function WorkerHome() {
       )}
 
       <SectionHeader title="Today's visits" action="All follow-ups" onAction={() => router.navigate('/worker/followups')} />
-      <View style={{ gap: spacing.sm }}>
+      <CardGrid minItemWidth={300}>
         {today.map((t) => (
           <TaskRow key={t.id} task={t} />
         ))}
+      </CardGrid>
         {today.length === 0 && (
           <Text color="textSecondary" align="center" style={{ paddingVertical: spacing.xl }}>
             All done for today 🎉
           </Text>
         )}
-      </View>
     </Screen>
   );
 }

@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { DoctorCard } from '../src/components/DoctorCard';
 import { doctors, getSpecialty, specialties } from '../src/data/mock';
 import {
+  CardGrid,
   Chip,
   Header,
   IconButton,
@@ -111,9 +112,11 @@ export default function Doctors() {
       </ScrollView>
 
       <View style={{ gap: spacing.md }}>
-        {list.map((d) => (
-          <DoctorCard key={d.id} doctor={d} />
-        ))}
+        <CardGrid minItemWidth={320}>
+          {list.map((d) => (
+            <DoctorCard key={d.id} doctor={d} />
+          ))}
+        </CardGrid>
         {list.length === 0 && (
           <View style={styles.empty}>
             <Text variant="title" align="center">No doctors found</Text>

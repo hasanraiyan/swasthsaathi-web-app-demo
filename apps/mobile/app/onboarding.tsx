@@ -19,7 +19,6 @@ import {
   Icon,
   Text,
   colors,
-  layout,
   radius,
   spacing,
 } from '../src/design-system';
@@ -52,7 +51,8 @@ const slides: Slide[] = [
 export default function Onboarding() {
   const { isLoaded, isSignedIn } = useAuth();
   const { width: windowWidth } = useWindowDimensions();
-  const width = Math.min(windowWidth, layout.maxContentWidth);
+  // Phone carousel stays narrow; tablets/laptops get a wider centered column.
+  const width = Math.min(windowWidth, windowWidth >= 1024 ? 720 : 560);
   const [index, setIndex] = useState(0);
   const listRef = useRef<FlatList<Slide>>(null);
 

@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useState, type ComponentProps, type ReactNode } from 'react';
 import { Pressable, StyleSheet, TextInput, View, type StyleProp, type TextInputProps, type ViewStyle } from 'react-native';
+import { useGridColumns } from '../breakpoints';
 import { colors, radius, spacing, typography } from '../tokens';
 import { Badge } from './Surfaces';
 import { Text } from './Text';
@@ -180,8 +181,19 @@ export function QuickAction({
   );
 }
 
-export function Grid({ children, columns = 4 }: { children: ReactNode; columns?: number }) {
-  return <View style={styles.grid}>{wrapGrid(children, columns)}</View>;
+export function Grid({
+  children,
+  columns = 4,
+  tabletColumns,
+  desktopColumns,
+}: {
+  children: ReactNode;
+  columns?: number;
+  tabletColumns?: number;
+  desktopColumns?: number;
+}) {
+  const resolved = useGridColumns(columns, tabletColumns, desktopColumns);
+  return <View style={styles.grid}>{wrapGrid(children, resolved)}</View>;
 }
 
 function wrapGrid(children: ReactNode, columns: number) {

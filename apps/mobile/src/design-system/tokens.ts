@@ -141,7 +141,16 @@ export const shadows = {
 
 export const layout = {
   screenPadding: spacing.xl,
+  /** Narrow default kept for backwards-compat; prefer breakpoint-aware widths. */
   maxContentWidth: 560,
+  /** Window-width breakpoints (see design-system/breakpoints.ts). */
+  breakpoints: { tablet: 600, laptop: 1024, desktop: 1440 },
+  /** Readable content widths per breakpoint. */
+  contentWidths: { phone: 560, tablet: 720, laptop: 960, desktop: 1120 },
+  /** Extra-wide width for dashboards / lists on laptop+. */
+  wideContentWidths: { phone: 560, tablet: 760, laptop: 1120, desktop: 1280 },
+  /** Left sidebar width used instead of bottom tabs on laptop+. */
+  sidebarWidth: 248,
   tabBarHeight: 64,
 } as const;
 

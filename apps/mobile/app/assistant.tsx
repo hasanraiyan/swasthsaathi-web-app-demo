@@ -14,7 +14,7 @@ import { VoiceBar, VoicePanel } from '../src/assistant/components/VoicePanel';
 import { useAssistantStrings } from '../src/assistant/strings';
 import { useAssistant } from '../src/assistant/useAssistant';
 import { RoleGate } from '../src/components/RoleGate';
-import { Text, colors, layout, spacing } from '../src/design-system';
+import { Text, colors, layout, radius, spacing } from '../src/design-system';
 
 /**
  * The health assistant (port of the example's persona-chat-view.tsx, patient-only).
@@ -59,7 +59,23 @@ function AssistantScreen() {
   // Inverted list: newest message sits at the bottom, next to the composer.
   const reversed = useMemo(() => [...a.messages].reverse(), [a.messages]);
   const showVoicePanel = isVoiceActive && !voiceMinimized;
-  const voiceProblem = voice.state === 'error' ? voice.error?.message ?? s('errorGeneric') : null;
+
+  // One friendly banner for every failure: thread actions, voice, or the chat run itself
+  // (e.g. "Service temporarily overloaded" from the agent's model provider).
+  const problem = (() => {
+    if (a.notice === 'threadCreateFailed') return { text: s('errThreadCreate') };
+    if (a.notice === 'threadDeleteFailed') return { text: s('errThreadDelete') };
+    if (a.notice === 'voiceStartFailed') return { text: s('errVoiceStart'), retry: () => void startVoice() };
+    if (voice.state === 'error') {
+      const mic = /microphone|permission/i.test(voice.error?.message ?? '');
+      return { text: mic ? s('errMic') : s('errVoiceStart'), retry: mic ? undefined : () => void startVoice() };
+    }
+    if (a.error) {
+      const busy = /overload|busy|rate.?limit|capacity|429/i.test(a.error.message ?? '');
+      return { text: busy ? s('errBusy') : s('errServer'), retry: () => void a.reload() };
+    }
+    return null;
+  })();
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
@@ -106,10 +122,25 @@ function AssistantScreen() {
         )}
 
         <View style={styles.footer}>
-          {(a.error || voiceProblem) && (
-            <Text variant="small" color="danger" style={styles.error}>
-              {voiceProblem ?? a.error?.message ?? s('errorGeneric')}
-            </Text>
+          {problem && (
+            <View style={styles.problem} accessibilityRole="alert">
+              <Ionicons name="alert-circle" size={18} color={colors.danger} />
+              <Text variant="small" style={{ flex: 1 }}>
+                {problem.text}
+              </Text>
+              {problem.retry && (
+                <Pressable onPress={problem.retry} hitSlop={8} accessibilityRole="button">
+                  <Text variant="smallMedium" color="primary">
+                    {s('retry')}
+                  </Text>
+                </Pressable>
+              )}
+              {a.notice && (
+                <Pressable onPress={a.clearNotice} hitSlop={8} accessibilityRole="button" accessibilityLabel={s('dismiss')}>
+                  <Ionicons name="close" size={16} color={colors.textMuted} />
+                </Pressable>
+              )}
+            </View>
           )}
           {a.interrupt && !showVoicePanel && (
             <InterruptPanel
@@ -145,10 +176,7 @@ function AssistantScreen() {
         activeThreadId={a.activeThreadId}
         onSelect={a.selectThread}
         onNew={a.newChat}
-        onDelete={(id) => {
-          if (id === a.activeThreadId) a.newChat();
-          void a.deleteThread(id);
-        }}
+        onDelete={(id) => void a.removeThread(id)}
         onOpenMemory={() => setMemoryOpen(true)}
       />
       <MemorySheet visible={memoryOpen} onClose={() => setMemoryOpen(false)} agentId={PERSONA_AGENT_ID} />
@@ -180,5 +208,14 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingHorizontal: spacing.lg, paddingVertical: spacing.lg },
   footer: { paddingHorizontal: spacing.md, paddingTop: spacing.xs, paddingBottom: spacing.sm },
-  error: { paddingHorizontal: spacing.sm, paddingBottom: spacing.xs },
+  problem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.dangerSoft,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.sm,
+  },
 });

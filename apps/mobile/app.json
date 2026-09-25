@@ -11,6 +11,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.swasthsaathi.app",
       "infoPlist": {
+        "NSCameraUsageDescription": "SwasthSaathi uses the camera for video consultation with doctors so they can see you during the call.",
         "NSMicrophoneUsageDescription": "SwasthSaathi uses the microphone so you can talk to the health assistant."
       }
     },
@@ -21,6 +22,7 @@
       },
       "package": "com.swasthsaathi.app",
       "permissions": [
+        "android.permission.CAMERA",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.RECORD_AUDIO"
       ]
@@ -36,6 +38,12 @@
     "plugins": [
       "expo-router",
       "expo-dev-client",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow SwasthSaathi to use the camera for video consultation with doctors."
+        }
+      ],
       [
         "expo-build-properties",
         {

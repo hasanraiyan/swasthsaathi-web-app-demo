@@ -86,6 +86,42 @@ function int16BytesToFloat(bytes: ArrayBuffer): Float32Array<ArrayBuffer> {
   return out;
 }
 
+/**
+ * react-native-audio-api allows ONE active recorder app-wide (a native global handle):
+ * starting a second AudioRecorder while an earlier one is still running fails with
+ * "Another recording is already in progress". So there is exactly one recorder, reused
+ * by every call, and a new call always waits for the previous stop() to finish.
+ * Kept on globalThis so a Fast Refresh of this module can't orphan a running recorder.
+ */
+const shared = globalThis as typeof globalThis & {
+  __ssRecorder?: AudioRecorder;
+  __ssRecorderStopping?: Promise<unknown> | null;
+};
+
+function getRecorder(): AudioRecorder {
+  shared.__ssRecorder ??= new AudioRecorder();
+  return shared.__ssRecorder;
+}
+
+function stopRecorder(): Promise<unknown> {
+  const recorder = shared.__ssRecorder;
+  if (!recorder) return Promise.resolve();
+  try {
+    recorder.clearOnAudioReady();
+  } catch {
+    // no callback registered
+  }
+  if (!recorder.isRecording() && !recorder.isPaused()) return shared.__ssRecorderStopping ?? Promise.resolve();
+  const stopping = recorder
+    .stop()
+    .catch(() => undefined)
+    .finally(() => {
+      if (shared.__ssRecorderStopping === stopping) shared.__ssRecorderStopping = null;
+    });
+  shared.__ssRecorderStopping = stopping;
+  return stopping;
+}
+
 export function useAssistantVoice(options: UseVoiceOptions = {}): UseVoiceResult {
   const { defaultAgentId, fetchWithAuth, logger: rootLogger } = usePersonaContext();
   const logger = useMemo(() => rootLogger.child('voice:native'), [rootLogger]);
@@ -131,15 +167,9 @@ export function useAssistantVoice(options: UseVoiceOptions = {}): UseVoiceResult
 
   const teardownAudio = useCallback(() => {
     logger.debug('teardown audio', { ...statsRef.current });
-    const recorder = recorderRef.current;
-    recorderRef.current = null;
-    if (recorder) {
-      try {
-        recorder.clearOnAudioReady();
-        void recorder.stop();
-      } catch {
-        // already stopped
-      }
+    if (recorderRef.current) {
+      recorderRef.current = null;
+      void stopRecorder();
     }
     try {
       queueRef.current?.stop();
@@ -187,7 +217,8 @@ export function useAssistantVoice(options: UseVoiceOptions = {}): UseVoiceResult
     }
     const queue = ctx.createBufferQueueSource();
     queue.connect(ctx.destination);
-    queue.start();
+    // Offset must be explicit: react-native-audio-api 0.13's default (-1) fails its own range check.
+    queue.start(0, 0);
     queueRef.current = queue;
   }, []);
 
@@ -207,7 +238,9 @@ export function useAssistantVoice(options: UseVoiceOptions = {}): UseVoiceResult
       resetPlayer();
 
       const frameSamples = Math.round((inputSampleRate * FRAME_MS) / 1000);
-      const recorder = new AudioRecorder();
+      // Release a recorder left running by an earlier call (or a crash / hot reload).
+      await stopRecorder();
+      const recorder = getRecorder();
       recorderRef.current = recorder;
       const ready = recorder.onAudioReady(
         { sampleRate: inputSampleRate, bufferLength: frameSamples * 2, channelCount: 1 },
@@ -241,6 +274,11 @@ export function useAssistantVoice(options: UseVoiceOptions = {}): UseVoiceResult
       if (ready.status === 'error') throw new Error(ready.message);
       const started = await recorder.start();
       if (started.status === 'error') throw new Error(started.message);
+      if (!mountedRef.current || !wsRef.current) {
+        // The call ended while the mic was starting — don't leave it recording.
+        await stopRecorder();
+        return;
+      }
       logger.debug('recorder started', { frameSamples, bufferLength: frameSamples * 2 });
     },
     [logger, resetPlayer],
@@ -296,8 +334,10 @@ export function useAssistantVoice(options: UseVoiceOptions = {}): UseVoiceResult
           startAudio(value.inputSampleRate as number, value.outputSampleRate as number)
             .then(() => mountedRef.current && setState('listening'))
             .catch((err) => {
+              // Keep the 'error' state (stop() would reset it to idle) so the UI can show it.
+              closeSocket('audio_setup_failed');
+              teardownAudio();
               fail(err);
-              stop();
             });
           break;
         case 'voice_activity':
@@ -321,7 +361,7 @@ export function useAssistantVoice(options: UseVoiceOptions = {}): UseVoiceResult
           break;
       }
     },
-    [closeSocket, fail, handleTranscript, resetPlayer, startAudio, stop, teardownAudio],
+    [closeSocket, fail, handleTranscript, resetPlayer, startAudio, teardownAudio],
   );
 
   const handleMessage = useCallback(
@@ -437,7 +477,7 @@ export function useAssistantVoice(options: UseVoiceOptions = {}): UseVoiceResult
         if (wsRef.current === ws) fail(new Error('Voice connection error.'));
       };
       ws.onclose = (e) => {
-        logger.debug('socket closed', { code: e.code, reason: e.reason, ours: wsRef.current !== ws });
+        logger.debug('socket closed', { code: e.code, reason: e.reason, stale: wsRef.current !== ws });
         if (wsRef.current !== ws) return;
         wsRef.current = null;
         teardownAudio();

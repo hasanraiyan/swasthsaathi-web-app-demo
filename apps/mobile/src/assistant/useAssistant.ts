@@ -1,4 +1,4 @@
-import { useChat, useThreads, type PersonaMessage } from '@personaai/react';
+import { useChat, usePersonaContext, useThreads, type PersonaMessage } from '@personaai/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createStore } from '../data/store';
 import { useI18n } from '../state/i18n';
@@ -32,6 +32,9 @@ function groupReasoning(messages: PersonaMessage[]): GroupedMessage[] {
 
 const INACTIVE_VOICE = ['idle', 'ended', 'error'];
 
+/** Problems outside a chat run (the run's own errors come from `useChat().error`). */
+export type AssistantNotice = 'threadCreateFailed' | 'threadDeleteFailed' | 'voiceStartFailed';
+
 /**
  * Everything the assistant screen needs — a React Native port of the chat-sdk example's
  * `usePersonaChatWidget`: lazy thread creation, HITL/clarification handling, and one
@@ -43,7 +46,8 @@ export function useAssistant() {
   const { lang } = useI18n();
   const activeThreadId = activeThreadStore.use();
 
-  const { threads, createThread, deleteThread, refetch: refetchThreads, isLoading: threadsLoading } = useThreads();
+  const { fetchWithAuth } = usePersonaContext();
+  const { threads, createThread, refetch: refetchThreads, isLoading: threadsLoading } = useThreads();
 
   const context = useMemo(() => ({ app: 'swasthsaathi', userRole: 'patient', language: lang }), [lang]);
   const voice = useAssistantVoice({ agentId, threadId: activeThreadId, context });
@@ -57,6 +61,8 @@ export function useAssistant() {
     onTitle: () => void refetchThreads(),
   });
   const { clear, sendMessage, resumeInterrupt, interrupt, stop, isStreaming } = chat;
+  const [notice, setNotice] = useState<AssistantNotice | null>(null);
+  const clearNotice = useCallback(() => setNotice(null), []);
 
   const selectThread = useCallback(
     (id: string | undefined) => {
@@ -71,22 +77,30 @@ export function useAssistant() {
   const newChat = useCallback(() => selectThread(undefined), [selectThread]);
 
   /** The current thread, or a freshly created one (voice needs a real thread to persist into). */
-  const ensureThread = useCallback(async () => {
+  // Never throws: a failed create (network, 5xx) becomes a notice instead of an
+  // unhandled promise rejection.
+  const ensureThread = useCallback(async (): Promise<string | undefined> => {
     const current = activeThreadStore.get();
     if (current) return current;
-    const thread = await createThread(agentId);
-    if (thread?._id) {
-      activeThreadStore.set(thread._id);
-      void refetchThreads();
+    try {
+      const thread = await createThread(agentId);
+      if (thread?._id) {
+        activeThreadStore.set(thread._id);
+        void refetchThreads();
+      }
+      return thread?._id;
+    } catch {
+      setNotice('threadCreateFailed');
+      return undefined;
     }
-    return thread?._id;
   }, [agentId, createThread, refetchThreads]);
 
   const send = useCallback(
     (text?: string) => {
       // Not awaited: sendMessage shows the message optimistically and resolves the
       // thread promise itself, so the first message of a new chat appears instantly.
-      void sendMessage(text, { threadId: ensureThread().catch(() => undefined) });
+      setNotice(null);
+      void sendMessage(text, { threadId: ensureThread() });
     },
     [ensureThread, sendMessage],
   );
@@ -99,10 +113,12 @@ export function useAssistant() {
   const startVoice = useCallback(async () => {
     if (isVoiceActive || voiceStarting) return;
     if (isStreaming) stop();
+    setNotice(null);
     setVoiceStarting(true);
     try {
       const id = await ensureThread();
       if (id) setVoiceRequested(true);
+      else setNotice('voiceStartFailed');
     } finally {
       setVoiceStarting(false);
     }
@@ -116,6 +132,28 @@ export function useAssistant() {
   }, [voiceRequested, activeThreadId, voice]);
 
   const stopVoice = useCallback(() => voice.stop(), [voice]);
+
+  // Deleted directly (not via useThreads().deleteThread) because the SDK throws on any
+  // non-2xx without exposing the status — and a 404 here means "already gone", which is
+  // exactly what the user wanted (e.g. a double tap on the trash icon), not an error.
+  const deletingRef = useRef(new Set<string>());
+  const removeThread = useCallback(
+    async (id: string) => {
+      if (deletingRef.current.has(id)) return;
+      deletingRef.current.add(id);
+      if (id === activeThreadStore.get()) selectThread(undefined);
+      try {
+        const res = await fetchWithAuth(`/threads/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        if (!res.ok && res.status !== 404) setNotice('threadDeleteFailed');
+      } catch {
+        setNotice('threadDeleteFailed');
+      } finally {
+        deletingRef.current.delete(id);
+        void refetchThreads();
+      }
+    },
+    [fetchWithAuth, refetchThreads, selectThread],
+  );
 
   // After a call ends, pick up the auto-generated title for a thread that started in voice.
   const wasVoiceActive = useRef(false);
@@ -159,7 +197,7 @@ export function useAssistant() {
     threads,
     threadsLoading,
     refetchThreads,
-    deleteThread,
+    removeThread,
     selectThread,
     newChat,
     send,
@@ -170,5 +208,7 @@ export function useAssistant() {
     stopVoice,
     decideHitl,
     submitClarification,
+    notice,
+    clearNotice,
   };
 }

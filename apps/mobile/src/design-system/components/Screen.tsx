@@ -1,8 +1,9 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import type { ReactNode } from 'react';
-import { ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { ScrollView, StyleSheet, View, useWindowDimensions, type StyleProp, type ViewStyle } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
+import { contentMaxWidthFor, getBreakpoint } from '../breakpoints';
 import { colors, layout, spacing } from '../tokens';
 import { IconButton } from './Surfaces';
 import { Text } from './Text';
@@ -14,27 +15,35 @@ export interface ScreenProps {
   background?: string;
   contentStyle?: StyleProp<ViewStyle>;
   footer?: ReactNode;
+  /** Use the extra-wide content width (dashboards, lists, forms on laptop+). */
+  wide?: boolean;
+  /** Explicit max width override (takes precedence over `wide`). */
+  maxWidth?: number;
 }
 
-/** Safe-area aware page wrapper. Content is capped at a readable width on web/tablets. */
-export function Screen({ children, scroll = true, edges = ['top'], background = colors.background, contentStyle, footer }: ScreenProps) {
+/** Safe-area aware page wrapper. Content width adapts to phone/tablet/laptop. */
+export function Screen({ children, scroll = true, edges = ['top'], background = colors.background, contentStyle, footer, wide, maxWidth }: ScreenProps) {
+  const { width } = useWindowDimensions();
+  const bp = getBreakpoint(width);
+  const resolvedMax = maxWidth ?? contentMaxWidthFor(bp, wide ?? (bp === 'laptop' || bp === 'desktop'));
+  const pad = bp === 'phone' ? layout.screenPadding : bp === 'tablet' ? spacing.xxl : spacing.xxxl;
   const body = scroll ? (
     <ScrollView
-      contentContainerStyle={[styles.content, contentStyle]}
+      contentContainerStyle={[styles.content, { paddingHorizontal: pad }, contentStyle]}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
       {children}
     </ScrollView>
   ) : (
-    <View style={[styles.content, { flex: 1 }, contentStyle]}>{children}</View>
+    <View style={[styles.content, { flex: 1, paddingHorizontal: pad }, contentStyle]}>{children}</View>
   );
 
   return (
     <SafeAreaView edges={edges} style={[styles.root, { backgroundColor: background }]}>
-      <View style={styles.column}>
+      <View style={[styles.column, { maxWidth: resolvedMax }]}>
         {body}
-        {footer && <View style={styles.footer}>{footer}</View>}
+        {footer && <View style={[styles.footer, { paddingHorizontal: pad }]}>{footer}</View>}
       </View>
     </SafeAreaView>
   );

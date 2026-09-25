@@ -8,6 +8,8 @@ import { getFacility, myTokenStore, referralsStore } from '../../src/data/rural'
 import {
   Button,
   Card,
+  CardGrid,
+  Columns,
   DashedButton,
   DoctorPromoIllustration,
   Grid,
@@ -82,7 +84,7 @@ export default function Home() {
       <Spacer size="xl" />
 
       <SectionHeader title={t('services')} />
-      <Grid columns={4}>
+      <Grid columns={4} tabletColumns={6} desktopColumns={8}>
         <QuickAction icon="pulse-outline" label={t('symptomCheck')} onPress={() => router.push('/triage')} tint={colors.danger} background={colors.dangerSoft} />
         <QuickAction icon="videocam-outline" label={t('teleconsult')} onPress={() => router.push('/teleconsult')} tint={colors.info} background={colors.infoSoft} />
         <QuickAction icon="ticket-outline" label={t('queue')} onPress={() => router.push('/queue')} />
@@ -128,37 +130,44 @@ export default function Home() {
       )}
 
       <SectionHeader title="Upcoming Appointments" action="View All" onAction={() => router.navigate('/appointments')} />
-      {next ? <AppointmentCard appointment={next} /> : <DashedButton label="Book your first appointment" onPress={() => router.push('/doctors')} />}
+      <CardGrid minItemWidth={300}>
+        {next ? <AppointmentCard appointment={next} /> : <DashedButton label="Book your first appointment" onPress={() => router.push('/doctors')} />}
+      </CardGrid>
       <Spacer size="xl" />
 
-      <Card tone="tint" padding="xl" style={styles.promo}>
-        <View style={{ maxWidth: '62%', gap: spacing.sm, zIndex: 1 }}>
-          <Text variant="h2">Book Appointments in Minutes</Text>
-          <Text variant="small" color="textSecondary">
-            Consult verified doctors near you
-          </Text>
-          <Button label="Book Now" size="sm" iconRight="arrow-forward" onPress={() => router.push('/doctors')} style={{ marginTop: spacing.xs }} />
-        </View>
-        <View style={styles.promoArt}>
-          <DoctorPromoIllustration size={120} />
-        </View>
-      </Card>
-      <Spacer size="xl" />
-
-      <SectionHeader title={t('healthTips')} action="See All" onAction={() => router.navigate('/health-tips')} />
-      <Card tone="tint">
-        <Row gap="md">
-          <View style={styles.tipIcon}>
-            <Icon name={tip.icon} size={22} color={colors.primaryMuted} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text variant="title">{tip.title}</Text>
+      <Columns breakpoint="laptop">
+        <View>
+          <SectionHeader title="Book faster" />
+          <Card tone="tint" padding="xl" style={styles.promo}>
+          <View style={{ maxWidth: '62%', gap: spacing.sm, zIndex: 1 }}>
+            <Text variant="h2">Book Appointments in Minutes</Text>
             <Text variant="small" color="textSecondary">
-              {tip.body}
+              Consult verified doctors near you
             </Text>
+            <Button label="Book Now" size="sm" iconRight="arrow-forward" onPress={() => router.push('/doctors')} style={{ marginTop: spacing.xs }} />
           </View>
-        </Row>
-      </Card>
+          <View style={styles.promoArt}>
+            <DoctorPromoIllustration size={120} />
+          </View>
+        </Card>
+        </View>
+        <View>
+          <SectionHeader title={t('healthTips')} action="See All" onAction={() => router.navigate('/health-tips')} />
+          <Card tone="tint">
+          <Row gap="md">
+            <View style={styles.tipIcon}>
+              <Icon name={tip.icon} size={22} color={colors.primaryMuted} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text variant="title">{tip.title}</Text>
+              <Text variant="small" color="textSecondary">
+                {tip.body}
+              </Text>
+            </View>
+          </Row>
+        </Card>
+        </View>
+      </Columns>
     </Screen>
   );
 }

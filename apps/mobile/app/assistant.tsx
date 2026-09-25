@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, AppState, FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChatMessage } from '../src/assistant/components/ChatMessage';
 import { Composer } from '../src/assistant/components/Composer';
@@ -14,7 +14,7 @@ import { VoiceBar, VoicePanel } from '../src/assistant/components/VoicePanel';
 import { useAssistantStrings } from '../src/assistant/strings';
 import { useAssistant } from '../src/assistant/useAssistant';
 import { RoleGate } from '../src/components/RoleGate';
-import { Text, colors, layout, radius, spacing } from '../src/design-system';
+import { Text, colors, contentMaxWidthFor, getBreakpoint, radius, spacing } from '../src/design-system';
 
 /**
  * The health assistant (port of the example's persona-chat-view.tsx, patient-only).
@@ -77,6 +77,10 @@ function AssistantScreen() {
     return null;
   })();
 
+  // Chat column widens on tablets/laptops instead of a thin phone strip.
+  const { width: windowWidth } = useWindowDimensions();
+  const chatMax = contentMaxWidthFor(getBreakpoint(windowWidth), true);
+
   return (
     <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
       <View style={styles.header}>
@@ -99,7 +103,7 @@ function AssistantScreen() {
         </Pressable>
       </View>
 
-      <KeyboardAvoidingView style={styles.column} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={[styles.column, { maxWidth: chatMax }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {showVoicePanel ? (
           <VoicePanel voice={voice} onMinimize={() => setVoiceMinimized(true)} />
         ) : a.isLoadingHistory && a.messages.length === 0 ? (
@@ -204,7 +208,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
     backgroundColor: colors.surface,
   },
-  column: { flex: 1, width: '100%', maxWidth: layout.maxContentWidth, alignSelf: 'center' },
+  column: { flex: 1, width: '100%', alignSelf: 'center' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingHorizontal: spacing.lg, paddingVertical: spacing.lg },
   footer: { paddingHorizontal: spacing.md, paddingTop: spacing.xs, paddingBottom: spacing.sm },

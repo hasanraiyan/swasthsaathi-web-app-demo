@@ -6,6 +6,7 @@ import { consultQueueStore, patientsStore, type ConsultRequest } from '../../src
 import {
   Avatar,
   Card,
+  CardGrid,
   Icon,
   IconButton,
   KpiCard,
@@ -46,11 +47,11 @@ export default function DoctorQueue() {
         <IconButton icon="notifications-outline" label="Notifications" bordered onPress={() => router.push('/notifications')} />
       </Row>
 
-      <Row gap="sm">
+      <CardGrid minItemWidth={160}>
         <KpiCard label="Waiting" value={waiting.length} icon="hourglass-outline" />
         <KpiCard label="Avg wait" value={avgWait} unit="min" icon="time-outline" />
         <KpiCard label="Seen today" value={queue.filter((c) => c.status === 'done').length + 17} icon="checkmark-done-outline" />
-      </Row>
+      </CardGrid>
       <Spacer size="lg" />
 
       <SegmentedControl
@@ -63,16 +64,16 @@ export default function DoctorQueue() {
       />
       <Spacer size="lg" />
 
-      <View style={{ gap: spacing.md }}>
+      <CardGrid minItemWidth={320}>
         {list.map((c) => (
           <QueueCard key={c.id} request={c} patientName={patients.find((p) => p.id === c.patientId)?.name ?? 'Patient'} />
         ))}
+      </CardGrid>
         {list.length === 0 && (
           <Text color="textSecondary" align="center" style={{ paddingVertical: spacing.xxl }}>
             Queue is empty.
           </Text>
         )}
-      </View>
       <Text variant="caption" color="textMuted" align="center" style={{ marginTop: spacing.lg }}>
         Sorted by triage level, then waiting time.
       </Text>

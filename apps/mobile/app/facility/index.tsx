@@ -5,6 +5,8 @@ import {
   Banner,
   BarChart,
   Card,
+  CardGrid,
+  Columns,
   Header,
   KpiCard,
   ProgressBar,
@@ -47,39 +49,43 @@ export default function FacilityDashboard() {
         </>
       )}
 
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+      <CardGrid minItemWidth={160}>
         <KpiCard label="OPD today" value={k.opdToday} delta={k.opdToday - k.opdYesterday} icon="people-outline" />
         <KpiCard label="Avg wait" value={k.avgWaitMins} unit="min" delta={k.avgWaitMins - k.avgWaitLastWeek} goodWhen="down" icon="time-outline" />
         <KpiCard label="Teleconsults" value={k.teleconsultsToday} icon="videocam-outline" />
         <KpiCard label="Referral completion" value={`${k.referralCompletion}%`} delta={6} icon="git-branch-outline" />
         <KpiCard label="Follow-up coverage" value={`${k.followUpCoverage}%`} delta={-3} icon="checkbox-outline" />
         <KpiCard label="Staff present" value={`${k.staffPresent}/${k.staffTotal}`} icon="id-card-outline" />
-      </View>
+      </CardGrid>
 
       <Spacer size="xl" />
-      <SectionHeader title="OPD footfall · last 7 days" />
-      <Card>
-        <BarChart data={k.opdByDay.map((d) => ({ label: d.day, value: d.value }))} formatValue={(v) => `${v} patients`} />
-        <Text variant="caption" color="textMuted" style={{ marginTop: spacing.sm }}>
-          Tap a bar to see that day.
-        </Text>
-      </Card>
-
-      <Spacer size="xl" />
-      <SectionHeader title="Quality indicators" />
-      <Card style={{ gap: spacing.lg }}>
-        {k.quality.map((q) => (
-          <View key={q.label} style={{ gap: spacing.xs }}>
-            <Row style={{ justifyContent: 'space-between' }}>
-              <Text variant="small" style={{ flex: 1 }}>
-                {q.label}
-              </Text>
-              <Text variant="smallMedium">{q.value}%</Text>
-            </Row>
-            <ProgressBar value={q.value} tone={q.value >= 80 ? 'success' : q.value >= 60 ? 'warning' : 'danger'} />
-          </View>
-        ))}
-      </Card>
+      <Columns breakpoint="laptop">
+        <View>
+          <SectionHeader title="OPD footfall · last 7 days" />
+          <Card>
+            <BarChart data={k.opdByDay.map((d) => ({ label: d.day, value: d.value }))} formatValue={(v) => `${v} patients`} />
+            <Text variant="caption" color="textMuted" style={{ marginTop: spacing.sm }}>
+              Tap a bar to see that day.
+            </Text>
+          </Card>
+        </View>
+        <View>
+          <SectionHeader title="Quality indicators" />
+          <Card style={{ gap: spacing.lg }}>
+            {k.quality.map((q) => (
+              <View key={q.label} style={{ gap: spacing.xs }}>
+                <Row style={{ justifyContent: 'space-between' }}>
+                  <Text variant="small" style={{ flex: 1 }}>
+                    {q.label}
+                  </Text>
+                  <Text variant="smallMedium">{q.value}%</Text>
+                </Row>
+                <ProgressBar value={q.value} tone={q.value >= 80 ? 'success' : q.value >= 60 ? 'warning' : 'danger'} />
+              </View>
+            ))}
+          </Card>
+        </View>
+      </Columns>
 
       <Spacer size="xl" />
       <SectionHeader title="Diagnostics & equipment" />
